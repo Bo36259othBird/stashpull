@@ -107,3 +107,28 @@ def test_load_history_ignores_missing_keys(tmp_path):
     p.write_text(json.dumps([{"stash_ref": "stash@{0}"}]), encoding="utf-8")
     result = load_history(p)
     assert result == []
+
+
+def test_save_history_persists_all_fields(tmp_path):
+    """Verify that all HistoryEntry fields survive a save/load cycle unchanged."""
+    p = tmp_path / "history.json"
+    entry = _make_entry(
+        stash_ref="stash@{3}",
+        message="WIP on feat: def5678 add feature",
+        branch="feat/my-feature",
+        restored_at="2024-06-01T12:30:00+00:00",
+        mode="pop",
+        success=False,
+        files_affected=["src/main.py", "tests/test_main.py"],
+    )
+    save_history([entry], p)
+    loaded = load_history(p)
+    assert len(loaded) == 1
+    result = loaded[0]
+    assert result.stash_ref == "stash@{3}"
+    assert result.message == "WIP on feat: def5678 add feature"
+    assert result.branch == "feat/my-feature"
+    assert result.restored_at == "2024-06-01T12:30:00+00:00"
+    assert result.mode == "pop"
+    assert result.success is False
+    assert result.files_affected == ["src/main.py", "tests/test_main.py"]
